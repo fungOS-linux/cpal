@@ -932,6 +932,23 @@ mod platform_impl {
     }
 }
 
+#[cfg(target_os = "wasi")]
+mod platform_impl {
+    use crate::host::soil::Host as SoilHost;
+
+    impl_platform_host!(
+        Soil => SoilHost,
+        #[cfg(feature = "custom")] Custom => super::CustomHost
+    );
+
+    /// The default host for the current compilation target platform.
+    pub fn default_host() -> Host {
+        SoilHost::new()
+            .expect("the Soil host should always be available")
+            .into()
+    }
+}
+
 #[cfg(not(any(
     windows,
     target_os = "linux",
@@ -940,6 +957,7 @@ mod platform_impl {
     target_os = "netbsd",
     target_vendor = "apple",
     target_os = "android",
+    target_os = "wasi",
     all(
         target_arch = "wasm32",
         target_os = "unknown",

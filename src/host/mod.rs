@@ -83,6 +83,9 @@ pub(crate) mod wasapi;
 ))]
 pub(crate) mod webaudio;
 
+#[cfg(target_os = "wasi")]
+pub(crate) mod soil;
+
 #[cfg(feature = "custom")]
 pub(crate) mod custom;
 
@@ -94,6 +97,7 @@ pub(crate) mod custom;
     target_os = "netbsd",
     target_vendor = "apple",
     target_os = "android",
+    target_os = "wasi",
     all(
         target_arch = "wasm32",
         target_os = "unknown",
