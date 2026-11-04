@@ -260,8 +260,8 @@ fn run_callback(state: Arc<StreamState>) {
     let period =
         Duration::from_nanos((frames as u64 * 1_000_000_000) / u64::from(state.sample_rate.max(1)));
     let mut buffer = vec![0.0f32; samples];
+    let mut next_tick = Instant::now() + period;
     while !state.stop.load(Ordering::Acquire) {
-        let tick = Instant::now();
         {
             let mut callback = state.callback.lock().unwrap();
             let mut data =
@@ -294,9 +294,17 @@ fn run_callback(state: Arc<StreamState>) {
             }
         }
 
-        let elapsed = tick.elapsed();
-        if elapsed < period {
-            thread::sleep(period - elapsed);
+        // Keep an absolute deadline. Sleeping for `period - elapsed` lets
+        // scheduler overshoot accumulate, slowly starving the host ring.
+        let now = Instant::now();
+        if next_tick > now {
+            thread::sleep(next_tick - now);
+        }
+        next_tick += period;
+        if next_tick < now {
+            // We fell more than one period behind; resynchronise instead of
+            // trying to catch up in a burst.
+            next_tick = now + period;
         }
     }
 }
