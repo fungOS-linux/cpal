@@ -279,7 +279,12 @@ fn run_callback(state: Arc<StreamState>) {
             let accepted = unsafe {
                 soil_audio_write(state.handle, buffer[offset..].as_ptr(), remaining_frames)
             };
-            if accepted <= 0 {
+            if accepted < 0 {
+                let mut error = state.error_callback.lock().unwrap();
+                error(Error::new(ErrorKind::BackendError));
+                state.stop.store(true, Ordering::Release);
+                break;
+            } else if accepted == 0 {
                 thread::sleep(Duration::from_millis(1));
             } else {
                 offset += accepted as usize * state.channels;
