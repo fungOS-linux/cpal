@@ -29,7 +29,7 @@ unsafe extern "C" {
 
 const SAMPLE_RATE: u32 = 48_000;
 const CHANNELS: u16 = 2;
-const BLOCK_FRAMES: usize = 512;
+const BLOCK_FRAMES: usize = 1024;
 
 #[derive(Clone, Debug)]
 pub struct Host;
