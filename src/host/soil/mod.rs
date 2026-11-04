@@ -199,10 +199,13 @@ struct StreamState {
 impl Drop for StreamState {
     fn drop(&mut self) {
         self.stop.store(true, Ordering::Release);
+        // Stop the device before waiting for the guest callback thread. The
+        // guest may still be blocked in `soil_audio_write`; closing first
+        // turns that into backpressure instead of a visible tail underrun.
+        unsafe { soil_audio_close(self.handle) };
         if let Some(thread) = self.thread.lock().unwrap().take() {
             let _ = thread.join();
         }
-        unsafe { soil_audio_close(self.handle) };
     }
 }
 
